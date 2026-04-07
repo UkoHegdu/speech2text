@@ -9,7 +9,7 @@ WHISPER_MODEL_SIZE: str = "base"     # tiny | base | small | medium | large-v3
 WHISPER_DEVICE: str = "cpu"          # cpu | cuda
 WHISPER_COMPUTE_TYPE: str = "int8"   # int8 is fastest on CPU
 WHISPER_LANGUAGE: str = "en"         # Set to None for auto-detect (slower)
-WHISPER_VAD_FILTER: bool = True      # Skip silent sections (requires silero-vad download)
+WHISPER_VAD_FILTER: bool = False     # Skip silent sections (requires silero-vad download)
 # Biases Whisper toward clean output; reduce fillers at the source before any post-processing
 WHISPER_INITIAL_PROMPT: str = "Concise, grammatically correct speech without filler words:"
 
