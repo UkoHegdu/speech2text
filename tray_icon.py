@@ -43,13 +43,32 @@ def _make_image(status: AppStatus = AppStatus.IDLE) -> Image.Image:
 
 
 class TrayIcon:
-    def __init__(self, on_quit: Callable[[], None]) -> None:
+    def __init__(
+        self,
+        on_quit: Callable[[], None],
+        on_edit_vocab: Callable[[str], None],
+        get_project_name: Callable[[], str],
+    ) -> None:
         self._on_quit = on_quit
+        self._on_edit_vocab = on_edit_vocab
+        self._get_project_name = get_project_name
         self._icon: Optional[pystray.Icon] = None
+        self._last_known_project: str = ""
+
+    def _vocab_label(self, item: pystray.MenuItem) -> str:
+        project = self._get_project_name()
+        self._last_known_project = project  # snapshot while VS Code is still last foreground
+        if project:
+            return f"Edit vocabulary for '{project}'"
+        return "Edit vocabulary (open a VS Code project first)"
 
     def start(self) -> None:
         """Blocking — must be called from the main thread on Windows."""
-        menu = pystray.Menu(pystray.MenuItem("Quit", self._quit_clicked))
+        menu = pystray.Menu(
+            pystray.MenuItem(self._vocab_label, self._edit_vocab_clicked),
+            pystray.Menu.SEPARATOR,
+            pystray.MenuItem("Quit", self._quit_clicked),
+        )
         self._icon = pystray.Icon(
             "speech2text",
             _make_image(AppStatus.IDLE),
@@ -67,6 +86,9 @@ class TrayIcon:
     def stop(self) -> None:
         if self._icon:
             self._icon.stop()
+
+    def _edit_vocab_clicked(self, icon: pystray.Icon, item: pystray.MenuItem) -> None:
+        self._on_edit_vocab(self._last_known_project)
 
     def _quit_clicked(self, icon: pystray.Icon, item: pystray.MenuItem) -> None:
         icon.stop()

@@ -13,6 +13,8 @@ from typing import Optional
 
 import config
 import regex_cleaner
+import vocab_manager
+import window_tracker
 from audio_recorder import AudioRecorder
 from hotkey_listener import HotkeyListener
 from llm_cleaner import LLMCleaner
@@ -29,7 +31,11 @@ class SpeechToTextApp:
         self.transcriber = Transcriber()
         self.cleaner  = LLMCleaner()
         self.output   = OutputHandler()
-        self.tray     = TrayIcon(on_quit=self.shutdown)
+        self.tray     = TrayIcon(
+            on_quit=self.shutdown,
+            on_edit_vocab=self._edit_vocab,
+            get_project_name=window_tracker.current_project,
+        )
         self.hotkey   = HotkeyListener(on_start=self._start_recording, on_stop=self._stop_and_process)
         self._worker: Optional[threading.Thread] = None
 
@@ -39,6 +45,7 @@ class SpeechToTextApp:
 
     def run(self) -> None:
         self._startup_checks()
+        window_tracker.start()
         print("[Speech2Text] Preloading Whisper model…")
         self.transcriber.preload()
         print("[Speech2Text] Ready.  Hotkey: Hold Ctrl+Win")
@@ -91,9 +98,13 @@ class SpeechToTextApp:
                 self._beep(config.BEEP_ERROR)
                 return
 
-            # Transcribe
+            # Transcribe — inject vocab for the current project
+            project = window_tracker.current_project()
+            terms = vocab_manager.load_terms(project)
+            if terms:
+                print(f"[Speech2Text] Vocab ({project or 'global'}): {terms}")
             print("[Speech2Text] Transcribing…")
-            raw = self.transcriber.transcribe(audio)
+            raw = self.transcriber.transcribe(audio, vocab_terms=terms or None)
             if not raw.strip():
                 print("[Speech2Text] Nothing recognised.")
                 self._beep(config.BEEP_ERROR)
@@ -127,6 +138,9 @@ class SpeechToTextApp:
             self.tray.update(AppStatus.IDLE)
 
     # ------------------------------------------------------------------
+
+    def _edit_vocab(self, project: str) -> None:
+        vocab_manager.open_for_editing(project)
 
     def _startup_checks(self) -> None:
         if config.LLM_ENABLED:

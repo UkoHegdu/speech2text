@@ -27,14 +27,21 @@ class Transcriber:
         """Call at startup so the first transcription isn't slow."""
         self._ensure_loaded()
 
-    def transcribe(self, audio: np.ndarray) -> str:
-        """Return a transcript string from a float32 audio array."""
+    def transcribe(self, audio: np.ndarray, vocab_terms: list[str] | None = None) -> str:
+        """Return a transcript string from a float32 audio array.
+
+        vocab_terms: domain-specific words/phrases appended to the initial
+        prompt so Whisper biases toward their spelling (e.g. 'Kalman filter').
+        """
         self._ensure_loaded()
+        prompt = config.WHISPER_INITIAL_PROMPT
+        if vocab_terms:
+            prompt += " " + ", ".join(vocab_terms) + "."
         segments, _ = self._model.transcribe(
             audio,
             beam_size=5,
             language=config.WHISPER_LANGUAGE,
             vad_filter=config.WHISPER_VAD_FILTER,
-            initial_prompt=config.WHISPER_INITIAL_PROMPT,
+            initial_prompt=prompt,
         )
         return " ".join(seg.text.strip() for seg in segments).strip()
