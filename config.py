@@ -5,7 +5,7 @@ DTYPE: str = "float32"
 MIN_RECORDING_SECONDS: float = 0.3   # Ignore recordings shorter than this
 
 # Whisper (local transcription)
-WHISPER_MODEL_SIZE: str = "base"     # tiny | base | small | medium | large-v3
+WHISPER_MODEL_SIZE: str = "small"    # tiny | base | small | medium | large-v3
 WHISPER_DEVICE: str = "cpu"          # cpu | cuda
 WHISPER_COMPUTE_TYPE: str = "int8"   # int8 is fastest on CPU
 WHISPER_LANGUAGE: str = "en"         # Set to None for auto-detect (slower)
@@ -21,6 +21,10 @@ OLLAMA_BASE_URL: str = "http://localhost:11434"
 OLLAMA_MODEL: str = "phi3:mini"      # Any installed Ollama model works
 OLLAMA_TIMEOUT_SECONDS: int = 30
 LLM_ENABLED: bool = False            # Enable once Ollama is set up
+
+# Window tracker — per-editor vocabulary (see window_tracker.py)
+CLAUDE_PROCESS_NAME: str = "claude.exe"   # Claude Desktop foreground process
+CLAUDE_VOCAB_PROJECT: str = "claude"      # ~/.speech2text/vocab/claude.txt
 
 # Beep feedback (Windows winsound — frequency Hz, duration ms)
 BEEP_START      = (880,  150)   # High — recording started

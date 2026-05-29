@@ -8,7 +8,6 @@ Quit   : right-click the system tray icon -> Quit
 
 import sys
 import threading
-import winsound
 from typing import Optional
 
 import config
@@ -34,7 +33,8 @@ class SpeechToTextApp:
         self.tray     = TrayIcon(
             on_quit=self.shutdown,
             on_edit_vocab=self._edit_vocab,
-            get_project_name=window_tracker.current_project,
+            get_project_name=window_tracker.last_project,  # tray label: recent history is fine
+            on_toggle_vad=self._toggle_vad,
         )
         self.hotkey   = HotkeyListener(on_start=self._start_recording, on_stop=self._stop_and_process)
         self._worker: Optional[threading.Thread] = None
@@ -71,20 +71,17 @@ class SpeechToTextApp:
             self.recorder.start()
         except Exception as exc:
             print(f"[Speech2Text] Microphone error: {exc}")
-            self._beep(config.BEEP_ERROR)
             self.state.transition_to(AppStatus.IDLE)
             self.tray.update(AppStatus.IDLE)
             return
 
         self.tray.update(AppStatus.RECORDING)
-        self._beep(config.BEEP_START)
         print("[Speech2Text] Recording…")
 
     def _stop_and_process(self) -> None:
         if not self.state.transition_to(AppStatus.PROCESSING):
             return
         self.tray.update(AppStatus.PROCESSING)
-        self._beep(config.BEEP_STOP)
         print("[Speech2Text] Processing…")
 
         self._worker = threading.Thread(target=self._worker_fn, daemon=True)
@@ -95,7 +92,6 @@ class SpeechToTextApp:
             audio = self.recorder.stop()
             if audio is None:
                 print("[Speech2Text] No audio captured — too short or silent.")
-                self._beep(config.BEEP_ERROR)
                 return
 
             # Transcribe — inject vocab for the current project
@@ -107,7 +103,6 @@ class SpeechToTextApp:
             raw = self.transcriber.transcribe(audio, vocab_terms=terms or None)
             if not raw.strip():
                 print("[Speech2Text] Nothing recognised.")
-                self._beep(config.BEEP_ERROR)
                 return
             print(f"[Speech2Text] Raw      : {raw}")
 
@@ -126,12 +121,10 @@ class SpeechToTextApp:
 
             # Deliver
             self.output.deliver(cleaned)
-            self._beep(config.BEEP_DONE)
             print("[Speech2Text] Pasted ✓")
 
         except Exception as exc:
             print(f"[Speech2Text] Error: {exc}")
-            self._beep(config.BEEP_ERROR)
 
         finally:
             self.state.transition_to(AppStatus.IDLE)
@@ -141,6 +134,11 @@ class SpeechToTextApp:
 
     def _edit_vocab(self, project: str) -> None:
         vocab_manager.open_for_editing(project)
+
+    def _toggle_vad(self) -> None:
+        config.WHISPER_VAD_FILTER = not config.WHISPER_VAD_FILTER
+        state = "ON" if config.WHISPER_VAD_FILTER else "OFF"
+        print(f"[Speech2Text] VAD filter: {state}")
 
     def _startup_checks(self) -> None:
         if config.LLM_ENABLED:
@@ -152,13 +150,6 @@ class SpeechToTextApp:
                     f"{config.OLLAMA_BASE_URL}. LLM cleanup disabled."
                 )
                 config.LLM_ENABLED = False
-
-    @staticmethod
-    def _beep(params: tuple) -> None:
-        try:
-            winsound.Beep(*params)
-        except Exception:
-            pass   # No audio device — silently skip
 
 
 # ----------------------------------------------------------------------
