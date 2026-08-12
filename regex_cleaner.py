@@ -7,8 +7,8 @@ import re
 # Common spoken fillers — whole-word match only
 _FILLERS = re.compile(
     r'\b(um+|uh+|ah+|er+|hmm+|mhm+|huh'
-    r'|you know|i mean|basically|ok'
-    r'|actually|honestly|anyway)\b,?\s*',
+    r'|i mean|basically|ok'
+    r'|anyway)\b,?\s*',
     re.IGNORECASE,
 )
 
