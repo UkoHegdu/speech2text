@@ -94,6 +94,16 @@ class SpeechToTextApp:
                 print("[Speech2Text] No audio captured — too short or silent.")
                 return
 
+            if self.recorder.is_silent(audio):
+                print("[Speech2Text] Mic captured silence — check USB/mic connection.")
+                self.tray.notify(
+                    "Recording was silent. Your mic may have dropped out "
+                    "(e.g. a USB hub power/connection issue) — try re-plugging "
+                    "it or power-cycling the hub, then record again.",
+                    title="Speech2Text — Mic issue",
+                )
+                return
+
             # Transcribe — inject vocab for the current project
             project = window_tracker.current_project()
             terms = vocab_manager.load_terms(project)

@@ -39,6 +39,15 @@ class AudioRecorder:
         min_samples = int(config.SAMPLE_RATE * config.MIN_RECORDING_SECONDS)
         return audio if len(audio) >= min_samples else None
 
+    def is_silent(self, audio: np.ndarray) -> bool:
+        """True if the captured audio is near-zero throughout.
+
+        Catches the case where the input stream is open and buffering frames
+        but the device itself delivered nothing (e.g. a USB mic that went
+        dead after the hub it's attached to suspended/resumed).
+        """
+        return float(np.sqrt(np.mean(np.square(audio)))) < config.SILENCE_RMS_THRESHOLD
+
     def _callback(
         self,
         indata: np.ndarray,

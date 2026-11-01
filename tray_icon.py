@@ -102,6 +102,14 @@ class TrayIcon:
         if self._icon:
             self._icon.stop()
 
+    def notify(self, message: str, title: str = "Speech2Text") -> None:
+        """Best-effort Windows toast; silently no-ops if unsupported."""
+        if self._icon:
+            try:
+                self._icon.notify(message, title)
+            except Exception:
+                pass
+
     def _edit_vocab_clicked(self, icon: pystray.Icon, item: pystray.MenuItem) -> None:
         self._on_edit_vocab(self._last_known_project)
 

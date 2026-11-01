@@ -3,6 +3,7 @@ SAMPLE_RATE: int = 16000
 CHANNELS: int = 1
 DTYPE: str = "float32"
 MIN_RECORDING_SECONDS: float = 0.3   # Ignore recordings shorter than this
+SILENCE_RMS_THRESHOLD: float = 0.001  # Below this RMS, treat capture as a dead/disconnected mic
 
 # Whisper (local transcription)
 WHISPER_MODEL_SIZE: str = "small"    # tiny | base | small | medium | large-v3
