@@ -91,9 +91,6 @@ class SpeechToTextApp:
     def _worker_fn(self) -> None:
         try:
             audio = self.recorder.stop()
-            if audio is None:
-                print("[Speech2Text] No audio captured — too short or silent.")
-                return
 
             if self.recorder.is_silent(audio):
                 print("[Speech2Text] Mic captured silence — attempting USB auto-recovery.")
@@ -106,6 +103,10 @@ class SpeechToTextApp:
                     "trigger. Try re-plugging the mic or power-cycling the hub."
                 )
                 self.tray.notify(message, title="Speech2Text — Mic issue")
+                return
+
+            if self.recorder.is_too_short(audio):
+                print("[Speech2Text] No audio captured — too short.")
                 return
 
             # Transcribe — inject vocab for the current project
