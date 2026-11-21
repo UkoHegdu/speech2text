@@ -12,6 +12,7 @@ from typing import Optional
 
 import config
 import regex_cleaner
+import usb_recovery
 import vocab_manager
 import window_tracker
 from audio_recorder import AudioRecorder
@@ -95,13 +96,16 @@ class SpeechToTextApp:
                 return
 
             if self.recorder.is_silent(audio):
-                print("[Speech2Text] Mic captured silence — check USB/mic connection.")
-                self.tray.notify(
-                    "Recording was silent. Your mic may have dropped out "
-                    "(e.g. a USB hub power/connection issue) — try re-plugging "
-                    "it or power-cycling the hub, then record again.",
-                    title="Speech2Text — Mic issue",
+                print("[Speech2Text] Mic captured silence — attempting USB auto-recovery.")
+                recovered = usb_recovery.trigger()
+                message = (
+                    "Recording was silent. Auto-recovery triggered for the "
+                    "USB hub — try recording again in a few seconds."
+                    if recovered
+                    else "Recording was silent, and auto-recovery failed to "
+                    "trigger. Try re-plugging the mic or power-cycling the hub."
                 )
+                self.tray.notify(message, title="Speech2Text — Mic issue")
                 return
 
             # Transcribe — inject vocab for the current project
